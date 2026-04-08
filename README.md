@@ -1,5 +1,7 @@
 # claude-skills
 
+[中文版](README-zh.md) | [Skill Authoring Guide](SKILL-AUTHORING-GUIDE.md)
+
 Three Claude Code skills for shipping software with AI agents.
 
 | Skill | Command | What it does |
@@ -28,11 +30,16 @@ AI agents are great at generating code. They're terrible at knowing when the wor
 
 ## Install
 
+One command in your terminal:
+
 ```bash
-# Install all three
-cp -r skills/lgtm ~/.claude/skills/
-cp -r skills/product-manager ~/.claude/skills/
-cp -r skills/rtfd ~/.claude/skills/
+git clone https://github.com/Nodie-AI/claude-skills.git /tmp/cs && cp -r /tmp/cs/skills/* ~/.claude/skills/ && rm -rf /tmp/cs
+```
+
+Or tell Claude Code to do it:
+
+```
+you> Install skills from https://github.com/Nodie-AI/claude-skills — clone the repo and copy the skills/ directory to ~/.claude/skills/
 ```
 
 ## Quick start
