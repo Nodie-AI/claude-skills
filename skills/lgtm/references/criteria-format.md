@@ -19,34 +19,16 @@ status: in_progress | done
 
 ## Criteria
 
-### 1. {functional requirement}
-- check: {concrete verifiable statement}
+### 1. {criterion}
+- check: {concrete verifiable statement about expected behavior}
 - how: test
 - status: pass | fail | unchecked
 - evidence: {test name + result}
 
-### 2. {edge case / boundary}
-- check: {what happens with None, empty, duplicate, max-length, etc.}
+### 2. {criterion}
+- check: ...
 - how: test
-- status: pass | fail | unchecked
-- evidence:
-
-### 3. {error handling}
-- check: {what happens when DB fails, API 500s, input is garbage}
-- how: test
-- status: pass | fail | unchecked
-- evidence:
-
-### 4. {defensive — upstream sends bad data}
-- check: {what if the caller sends None, wrong type, extra fields, missing fields}
-- how: test
-- status: pass | fail | unchecked
-- evidence:
-
-### 5. {concurrency / race condition}
-- check: {what if two requests hit this at the same time}
-- how: test
-- status: pass | fail | unchecked
+- status: ...
 - evidence:
 ```
 

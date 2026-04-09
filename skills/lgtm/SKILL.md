@@ -6,9 +6,11 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Agent
 
 # /lgtm
 
-Write and run tests that prove the work is done. If the tests pass, there are no known bugs. If they fail, you found a bug.
+Write and run tests that prove the work is done and behaves correctly.
 
-There is no distinction between "acceptance testing" and "bug finding." Good tests do both.
+A passing test means the code does what it should. A failing test means you found a bug. But be careful: **a test that passes because the code "doesn't crash" is not the same as a test that passes because the code "does the right thing."** Always assert on the expected business outcome, not just the absence of errors.
+
+For example: if a crash-loop detector returns `count=0` because a field was None, the code didn't crash — but the feature is silently disabled. The test should assert `count >= 3` (the real expected value), not just `status_code == 200`.
 
 ## What you can write
 
@@ -89,6 +91,10 @@ Write updates the DB but only clears local cache. Other instances serve stale da
 ### Missing URL encoding
 
 `/api?id=${userId}` without `encodeURIComponent` — breaks if userId contains `&`, `=`, `#`. Check for inconsistency: if some call sites encode and others don't, the non-encoding ones are bugs.
+
+### Silent business logic failure
+
+Code runs without errors, returns 200, but the feature doesn't actually work. Example: `count = result.count or 0` returns 0 when count is None — the API responds 200 with `is_crash_loop: false` even though there were 5 crashes. The code is "working" but the feature is disabled. **Always verify the returned values make business sense, not just that the status code is 2xx.**
 
 ## Report format
 

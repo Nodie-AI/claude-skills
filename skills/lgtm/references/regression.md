@@ -4,7 +4,7 @@ Regression protection ensures new work doesn't break existing features. This is 
 
 ## Check order
 
-Every `/verify` call:
+Every `/lgtm` call:
 
 1. Run the project's existing test suite first (npm test, pytest, etc.)
 2. Check `.ai-verify/regression/*.test-plan.md` if they exist
