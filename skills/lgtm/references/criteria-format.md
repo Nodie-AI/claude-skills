@@ -19,23 +19,54 @@ status: in_progress | done
 
 ## Criteria
 
-### 1. {criterion}
-- check: {what to verify — one concrete statement}
-- how: test | command | file-exists | inspection
+### 1. {functional requirement}
+- check: {concrete verifiable statement}
+- how: test
 - status: pass | fail | unchecked
-- evidence: {file:line, test name, or command output}
+- evidence: {test name + result}
+
+### 2. {edge case / boundary}
+- check: {what happens with None, empty, duplicate, max-length, etc.}
+- how: test
+- status: pass | fail | unchecked
+- evidence:
+
+### 3. {error handling}
+- check: {what happens when DB fails, API 500s, input is garbage}
+- how: test
+- status: pass | fail | unchecked
+- evidence:
+
+### 4. {defensive — upstream sends bad data}
+- check: {what if the caller sends None, wrong type, extra fields, missing fields}
+- how: test
+- status: pass | fail | unchecked
+- evidence:
+
+### 5. {concurrency / race condition}
+- check: {what if two requests hit this at the same time}
+- how: test
+- status: pass | fail | unchecked
+- evidence:
 ```
+
+## What makes a complete criteria set
+
+A task is NOT verified unless the criteria cover ALL of these:
+
+1. **Functional**: the feature does what was asked (happy path)
+2. **Edge cases**: None, zero, empty string, max-length, unicode, negative numbers
+3. **Error handling**: DB down, API timeout, invalid response format, disk full
+4. **Defensive**: upstream caller sends garbage — wrong types, missing required fields, extra unexpected fields, null where non-null expected
+5. **Concurrency**: two requests at the same time for the same resource — does it 409 or 500?
+6. **Data integrity**: after the operation, is the data in the DB correct? Not just "did it return 200" but "is the row actually right?"
+
+If you skip any category, you're not verifying — you're hoping.
 
 ## Field rules
 
-**check**: A single verifiable statement. "Login works" is too vague. "POST /login with valid credentials returns 200 and a JWT token" is concrete.
+**check**: One concrete statement. "Login works" is vague. "POST /login with valid credentials returns 200 + JWT; the JWT decodes to the correct user_id" is verifiable.
 
-**how**: Determines verification method.
-- `test` — run a specific test
-- `command` — run a command and check output
-- `file-exists` — check file or function exists (weakest)
-- `inspection` — read code (use only when no better option exists)
+**how**: Always prefer `test` over `inspection`. Code inspection is not evidence — it's opinion.
 
-**status**: Only set to `pass` with concrete evidence. If uncertain, use `unchecked`.
-
-**evidence**: The proof. Include file path + line number, test name, or exact command output. Empty evidence with `pass` status is not allowed.
+**evidence**: Test name + pass/fail + relevant assertion output. Empty evidence with `pass` status is not allowed.
