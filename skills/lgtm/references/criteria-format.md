@@ -50,18 +50,20 @@ status: in_progress | done
 - evidence:
 ```
 
-## What makes a complete criteria set
+## What makes criteria complete
 
-A task is NOT verified unless the criteria cover ALL of these:
+One principle: **if a reasonable production scenario could break this code, there should be a test for it.**
 
-1. **Functional**: the feature does what was asked (happy path)
-2. **Edge cases**: None, zero, empty string, max-length, unicode, negative numbers
-3. **Error handling**: DB down, API timeout, invalid response format, disk full
-4. **Defensive**: upstream caller sends garbage — wrong types, missing required fields, extra unexpected fields, null where non-null expected
-5. **Concurrency**: two requests at the same time for the same resource — does it 409 or 500?
-6. **Data integrity**: after the operation, is the data in the DB correct? Not just "did it return 200" but "is the row actually right?"
+Ask yourself: "what inputs, states, and timing conditions could this code encounter in production?" Then write tests for those. Not just the ones the developer intended — the ones that will actually happen.
 
-If you skip any category, you're not verifying — you're hoping.
+Some areas people consistently miss:
+- What if a value that's "always there" is None?
+- What if two requests hit the same resource at the same time?
+- What if the upstream caller sends something slightly wrong?
+- What does the error response actually contain — does it leak internals?
+- After the operation, is the data correct, or just the status code?
+
+This is not an exhaustive list. Think about what's specific to the code you're verifying.
 
 ## Field rules
 
