@@ -34,18 +34,18 @@ status: in_progress | done
 
 ## What makes criteria complete
 
-One principle: **if a reasonable production scenario could break this code, there should be a test for it.**
+**If a reasonable production scenario could break this code, there should be a test for it.** Not just the scenarios the developer intended — the ones that will actually happen.
 
-Ask yourself: "what inputs, states, and timing conditions could this code encounter in production?" Then write tests for those. Not just the ones the developer intended — the ones that will actually happen.
+Areas people consistently miss — make sure you've at least considered these:
 
-Some areas people consistently miss:
-- What if a value that's "always there" is None?
-- What if two requests hit the same resource at the same time?
-- What if the upstream caller sends something slightly wrong?
-- What does the error response actually contain — does it leak internals?
-- After the operation, is the data correct, or just the status code?
+- **Edge values**: None where you expect a value, empty string, zero, negative, unicode, max-length
+- **Error paths**: DB down, API timeout, malformed response, disk full — does the code degrade gracefully or leak internals?
+- **Upstream garbage**: the caller sends wrong types, missing required fields, extra fields, null where non-null expected
+- **Concurrency**: two requests hit the same resource at the same time — 409 or unhandled 500?
+- **Data integrity**: after the operation, is the data in the DB actually correct? Not just "returned 200" but "the row has the right values"
+- **Silent failures**: code runs without errors, returns 200, but the feature doesn't actually work (e.g., `count or 0` returns 0 when count is None — no crash, but the feature is disabled)
 
-This is not an exhaustive list. Think about what's specific to the code you're verifying.
+This is not exhaustive. Think about what's specific to the code you're verifying — its dependencies, its callers, the data it touches.
 
 ## Field rules
 
