@@ -1,6 +1,6 @@
 ---
 name: rtfd
-description: "Read The F***ing Docs — maintain a structured wiki knowledge base from any input. Feed it URLs, articles, meeting notes, or source code repos and it produces organized, interlinked wiki pages. Use when documentation is missing, outdated, or scattered. Commands: compile, ingest, clone, audit."
+description: "Analyze, research, and document codebases and knowledge. Use when asked to understand a repo, explore a codebase, study source code, research a topic, generate reference docs, or build a knowledge wiki. Reads code or raw material and produces structured, interlinked documentation."
 ---
 
 # /rtfd
