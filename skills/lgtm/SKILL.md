@@ -1,134 +1,197 @@
 ---
 name: lgtm
-description: "Looks Good To Me — write tests to verify the current task is done. Generates acceptance criteria, writes real test code (unit + integration), runs them, catches regressions, produces structured verification reports. Use after implementing a feature, before committing, or anytime you want an honest progress check."
+description: "Looks Good To Me — write tests that find real bugs. Two modes: verify a task is done (acceptance tests), or hunt bugs in recent commits (adversarial tests). Reads git diffs, writes real test code, runs it, reports what breaks. Use after implementing a feature, before committing, or to audit recent changes."
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Agent
 ---
 
 # /lgtm
 
-Verify the current task by **writing and running real tests**.
+Find real bugs by **writing and running real tests**.
 
-The core loop: criteria → write tests → run tests → report. Not: criteria → read code → guess.
+Two modes:
+- **Verify**: "I built feature X — is it done?" → write acceptance tests
+- **Hunt**: "What's broken in recent changes?" → read diffs, write adversarial tests
+
+Both modes produce the same output: tests that either pass or fail, with concrete evidence.
 
 ## What you can write
 
 - Test files: `tests/`, `__tests__/`, files matching `*.test.*`, `*.spec.*`, `*_test.*`
-- Verification artifacts: `.ai-verify/` directory (criteria, reports, regression plans)
+- Verification artifacts: `.ai-verify/` directory
 
-Do not write to source code, docs, or config. If you need to change source code to fix a failing test, report the failure — the main agent or user fixes it.
+Never write source code, docs, or config. Report failures — don't fix them.
 
-## Workflow
+## Mode 1: Verify (task acceptance)
 
-### First call — define criteria, write tests
+When the user says `/lgtm` during or after a task:
 
-1. Read conversation to understand the task
-2. Generate acceptance criteria — each one maps to a real test
-3. **Write test code** that verifies each criterion:
-   - Match the project's existing test framework and patterns (look at existing test files first)
-   - Prefer integration tests over unit tests — call real functions, hit real endpoints
-   - Minimize mocks. Only mock external services (HTTP APIs, databases that need credentials). Never mock the code under test.
-   - Each test should be runnable independently
-4. Run the tests
-5. Save criteria to `.ai-verify/criteria.md`, show results
+1. Read conversation to understand what was built
+2. Generate acceptance criteria
+3. Write tests for each criterion — prefer integration tests, minimize mocks
+4. Run the tests, report results
+5. Save criteria to `.ai-verify/criteria.md`
 
-### Subsequent calls — run and report
+## Mode 2: Hunt (bug finding)
 
-1. Load criteria from `.ai-verify/criteria.md`
-2. **Regression first**: run existing test suite, check `.ai-verify/regression/` plans
-3. Run the tests you wrote for current criteria
-4. Report what passes, fails, remains untested
-5. If a test fails, report the failure with enough detail to fix it
+When the user says `/lgtm` with "scan", "hunt", "check commits", or similar:
 
-### When all pass — save to regression
+1. Run `git log --oneline -15` to find recent changes
+2. For each interesting commit, run `git diff <commit>^..<commit>` to read the diff
+3. Read the FULL source files that were changed (not just the diff — context matters)
+4. Look for bug patterns (see checklist below)
+5. Write **adversarial tests** that try to break the code
+6. Run the tests — a failing test = confirmed bug
 
-1. Offer to save criteria + test files to `.ai-verify/regression/`
-2. The test files persist — next time any agent works on this codebase, these tests run automatically
+### The adversarial testing mindset
+
+Acceptance tests ask "does it work?" Adversarial tests ask "how does it break?"
+
+```python
+# Acceptance test — confirms the happy path
+def test_create_binding_201():
+    r = client.post("/bindings", json=valid_payload)
+    assert r.status_code == 201
+
+# Adversarial test — finds the TOCTOU race condition
+def test_create_binding_concurrent_race():
+    """Two concurrent requests for same channel_id — does the second get
+    409 (correct) or 500 (unhandled unique constraint)?"""
+    # First request sees no existing row
+    # Second request ALSO sees no existing row (race)
+    # Both try INSERT — one gets unique violation
+    monkeypatch.setattr(module, "async_execute", fake_that_raises_unique_violation)
+    r = client.post("/bindings", json=same_payload)
+    assert r.status_code in (409, 200), f"Got {r.status_code} — unhandled race"
+```
+
+The adversarial test is harder to write but catches real production bugs.
+
+## Bug pattern checklist
+
+When reading a diff, actively look for these. Each one maps to a specific test you can write.
+
+### 1. None/null fallback traps
+
+```python
+# LOOKS SAFE:
+count = result.count or 0
+
+# BUG: if result.count is None (not 0), this silently becomes 0.
+# Everything downstream that depends on count is wrong.
+# Test: mock result.count = None, verify the code still works.
+```
+
+This is the #1 most common silent bug. Any `x or default` where x could be None/0/False/"" is suspicious.
+
+### 2. Check-then-act (TOCTOU)
+
+```python
+existing = await db.select(...).eq("id", x)
+if not existing.data:
+    await db.insert(...)  # ← Another request can insert between SELECT and INSERT
+```
+
+Test: make the SELECT return empty, then make the INSERT raise a unique constraint exception. The code should handle it gracefully (409 or retry), not 500.
+
+### 3. Error message info leaks
+
+```python
+except Exception as e:
+    raise HTTPException(status_code=500, detail=f"DB error: {e}")
+```
+
+Test: make the DB raise an exception containing table names and schema info. Verify the API response exposes this to the caller.
+
+### 4. String-based error detection
+
+```python
+if "23505" in str(err) or "unique" in str(err).lower():
+```
+
+Test: pass an error with the same meaning but different wording (e.g., "conflict: row already exists"). The detection fails, the error propagates as 500.
+
+### 5. Function argument arity mismatch (JS)
+
+```javascript
+function helper(a, b, c) { ... }
+helper(a, b, c, d, e);  // JS silently ignores d and e
+```
+
+Test: grep for function definitions and their call sites, count arguments. A mismatch suggests missing logic.
+
+### 6. Cache staleness after writes
+
+```javascript
+await api.updateBinding(id, newWebhook);
+cache.invalidate(id);  // Only invalidates THIS instance's cache
+```
+
+Test: verify that after an update, a subsequent read returns fresh data (not cached). If using multi-instance, the cache on other instances is stale for TTL duration.
+
+### 7. Missing encodeURIComponent
+
+```javascript
+const url = `/api/users?id=${userId}`;  // userId could contain & or =
+```
+
+Test: grep for template literals in URL construction, check if parameters are encoded. Compare against other call sites in the same file that DO encode.
 
 ## Test quality standards
 
-**Prefer real calls over mocks:**
+**Real calls, not mocks:**
 
 ```python
-# BAD — mocks everything, proves nothing
-@patch('app.services.user_service.create_user')
+# BAD — mocks the thing you're testing
+@patch('app.services.create_user')
 def test_register(mock_create):
     mock_create.return_value = {"id": "123"}
-    result = register({"email": "a@b.com"})
-    assert result.status == 201
+    ...
 
-# GOOD — calls real code, catches real bugs
+# GOOD — calls real code through the API
 def test_register():
-    result = client.post("/register", json={"email": "a@b.com", "password": "Str0ng!"})
-    assert result.status_code == 201
-    assert "id" in result.json()
-    # Verify side effect: user actually exists in DB
-    user = db.query(User).filter_by(email="a@b.com").first()
-    assert user is not None
-    assert user.password != "Str0ng!"  # should be hashed
+    r = client.post("/register", json={"email": "a@b.com", "password": "Str0ng!"})
+    assert r.status_code == 201
+    assert r.json()["id"]  # real response
 ```
 
-**When mocks ARE appropriate:**
+**Mocks ONLY for:**
 - External HTTP APIs (Stripe, Discord, etc.)
-- Services requiring credentials not available in test env
-- Time-dependent behavior (freeze time instead of waiting)
+- Databases that need credentials not in test env
+- Simulating specific failure modes (DB returning None, unique violations)
 
-**Test patterns to use:**
-- Find the project's existing test files, match their style (fixtures, client setup, DB setup)
-- If the project has a test client (FastAPI TestClient, supertest, etc.), use it
-- If the project has fixtures or factories, reuse them
-- Test both happy path AND error cases (invalid input, 404, 409, 500)
-- Test concurrent scenarios if the code does check-then-act patterns
+**Match existing test patterns:** Read the project's existing test files first. Reuse their fixtures, test clients, and helper functions.
 
-## Scanning new/changed code
-
-When checking criteria against a diff or recent commit:
-
-1. Read the diff (`git diff` or `git show`)
-2. For each changed function, look for:
-   - Check-then-act without locking (TOCTOU race conditions)
-   - Exception handling that swallows errors or leaks info
-   - URL/query construction without encoding
-   - Cache invalidation gaps (write happens but cache not cleared)
-3. Write tests that specifically target these patterns
-4. A test that catches a real bug is worth 10 tests that confirm happy paths
-
-## Example session
-
-User built a registration feature, runs `/lgtm`:
+## Report format
 
 ```
-Verification: User registration
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LGTM Bug Hunt: saddlepoint-ai/backend (last 10 commits)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Writing tests...
-  Created tests/test_registration_verify.py (4 tests)
+Scanned: 7 commits, 12 changed files
+Tests written: tests/api/test_lgtm_hunt.py (8 tests)
 
-REGRESSION:
-  ✓ Existing test suite passes (pytest → 42 passed)
+BUGS FOUND:
+  ✗ crash-loop count=None → detection disabled (HIGH)
+    └ test_crash_loop_count_none FAILED
+      result.count or 0 → always 0 when count is None
+      Fix: use len(result.data) as fallback
 
-NEW CRITERIA:
-  ✓ POST /register returns 201 with user object
-    └ test_register_success PASSED (23ms)
-  ✓ Duplicate email returns 409
-    └ test_register_duplicate_email PASSED (15ms)
-  ✗ Password stored as bcrypt hash
-    └ test_password_hashed FAILED
-      AssertionError: user.password == 'plaintext123'
-      Expected: bcrypt hash (starts with $2b$)
-  ○ Verification email sent
-    └ test_verification_email SKIPPED (no email service in test env)
+  ✗ concurrent create_definition → unhandled 500 (MEDIUM)
+    └ test_definition_concurrent_race FAILED
+      unique constraint exception not caught
 
-Progress: ●●✗○ 2/4
+  ✗ DB error leaks table names in response (MEDIUM)
+    └ test_db_error_info_leak PASSED (confirms leak)
 
-Fix needed:
-  Password is stored as plaintext at src/models/user.py:12
-  Expected: bcrypt.hash(password) before save
+VERIFIED OK:
+  ✓ team reactivation preserves new config
+  ✓ binding idempotent refresh returns 200
+  ✓ ownership check runs before webhook creation
+
+Summary: 3 bugs found, 3 verified OK, 0 unchecked
 ```
 
-## Criteria file format
+## Criteria and regression
 
-See `references/criteria-format.md` for the full spec.
-
-## Regression
-
-See `references/regression.md` for how regression checking and the persistent test suite work.
+See `references/criteria-format.md` for criteria file format.
+See `references/regression.md` for regression suite management.
