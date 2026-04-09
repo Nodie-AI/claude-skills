@@ -1,10 +1,10 @@
 ---
-name: lgtm
+name: verify
 description: "Looks Good To Me — write thorough tests that verify work is done and catch bugs. Reads code and git diffs, writes real test code covering happy paths + edge cases + error handling + concurrency, runs tests, reports results. Use after implementing a feature, before committing, or to verify recent changes."
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Agent
 ---
 
-# /lgtm
+# /verify
 
 Write and run tests that prove the work is done and behaves correctly.
 

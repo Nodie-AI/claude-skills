@@ -1,9 +1,9 @@
 ---
-name: rtfd
+name: wiki
 description: "Analyze, research, and document codebases and knowledge. Use when asked to understand a repo, explore a codebase, study source code, research a topic, generate reference docs, or build a knowledge wiki. Reads code or raw material and produces structured, interlinked documentation."
 ---
 
-# /rtfd
+# /wiki
 
 Turn chaos into documentation. Feed this skill raw material — URLs, articles, meeting notes, or codebases — and it produces structured, interlinked wiki pages.
 
