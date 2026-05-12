@@ -31,9 +31,10 @@ Current system reference.
 
 ## Modules \[#modules]
 
-| Module | Doc | Owned paths | Boundary |
-| --- | --- | --- | --- |
-| <module> | [<module>.md](<path>) | `<path>` | <responsibility> |
+| Module | Status | Doc | Owned paths | Boundary |
+| --- | --- | --- | --- | --- |
+| <module> | current | [<module>.md](<path>) | `<path>` | <responsibility> |
+| <future module> | TODO | TODO: [<future module>.md](<future-module>.md) | `<path>` | <why it should exist later> |
 
 ## References \[#references]
 
