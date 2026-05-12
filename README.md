@@ -8,7 +8,7 @@ Three Claude Code skills for shipping software with AI agents.
 |-------|---------|-------------|
 | **verify** | `/verify` | Create test plans, check acceptance criteria, produce verification reports |
 | **pm** | `/pm` | Make prioritization calls, write PRDs, drive the roadmap |
-| **wiki** | `/wiki` | Generate reference docs from code and build persistent knowledge wikis |
+| **nodie-wiki** | `/nodie-wiki` | Maintain `.nodie/` repo docs, dependency references, and durable knowledge |
 
 ## Why these three
 
@@ -24,7 +24,7 @@ AI agents are great at generating code. They're terrible at knowing when the wor
      └──────────────────┘
          │           │
          ▼           ▼
-       verify        wiki
+       verify     nodie-wiki
     "is it done?"  "write it down"
 ```
 
@@ -78,21 +78,21 @@ you> What's the status of this sprint?
 #    → progress report with blockers and risk flags
 ```
 
-### /wiki in 3 steps
+### /nodie-wiki in 3 steps
 
 ```bash
 # Step 1: Point it at code or material
-you> /wiki
+you> /nodie-wiki
 you> Generate docs for this project
-#    → reads codebase, produces architecture + module docs
+#    → updates .nodie/repo architecture + module docs
 
 # Step 2: Feed it research
 you> Here's an article about auth best practices: <URL>
-#    → ingests, extracts key takeaways, links to existing wiki pages
+#    → captures durable notes under .nodie/wiki and takeaways in .nodie/MEMORY.md
 
 # Step 3: Keep it healthy
-you> Audit the wiki
-#    → checks for broken links, orphan pages, stale entries
+you> Audit the Nodie wiki
+#    → checks .nodie/ links, stale pages, and duplicate sources of truth
 ```
 
 ---
@@ -190,7 +190,7 @@ Next: I'll draft the export PRD by Thursday. Dev team — capacity estimate by F
 
 ---
 
-## /wiki
+## /nodie-wiki
 
 **Read The F\*\*\*ing Docs** — because nobody writes documentation until it's too late.
 
@@ -204,11 +204,13 @@ Documentation has two failure modes:
 
 ### How it works
 
-Just run `/wiki` and tell it what you need. The agent figures out whether to generate reference docs from code or compile knowledge from raw material.
+Run `/nodie-wiki` and tell it what needs to be remembered or documented. The agent locates the owning `.nodie/` file, reads existing content, then applies the requested create/read/update/delete.
 
-**Codebase docs** — generates human-readable reference documentation from source code, similar to [cppreference.com](https://en.cppreference.com/) or Rust docs. Architecture overviews, module descriptions, interface documentation, file structure guides. The kind of docs every project needs but nobody writes.
+**Repo docs** — `.nodie/repo` stores current architecture, module boundaries, data flows, interfaces, and caveats for the code repository.
 
-**Knowledge wiki** — implements [Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). Instead of RAG (rediscovering knowledge from raw documents on every query), the LLM **compiles** raw material — articles, meeting notes, research, URLs — into a persistent, interlinked wiki. Knowledge accumulates instead of evaporating.
+**References** — `.nodie/ref` stores exact facts about third-party tools, APIs, services, protocols, and libraries.
+
+**Knowledge wiki** — `.nodie/wiki` stores user/domain knowledge as either `<topic>.md` or `<topic>/<topic>.md` plus numbered supporting files. Knowledge accumulates instead of evaporating.
 
 > *"The tedious part of maintaining a knowledge base is not the reading or the thinking — it's the bookkeeping. Updating cross-references, keeping summaries current, noting when new data contradicts old claims, maintaining consistency across dozens of pages. Humans abandon wikis because the maintenance burden grows faster than the value. LLMs don't get bored, don't forget to update a cross-reference, and can touch 15 files in one pass."*
 > — Andrej Karpathy
@@ -221,7 +223,7 @@ The architecture follows Karpathy's three-layer model:
 | **Wiki** | Structured markdown: summaries, entity pages, cross-references | The agent — compiled knowledge |
 | **Schema** | SKILL.md + conventions telling the agent how to maintain the wiki | Co-evolved by you and the agent |
 
-**Why "wiki"?** Because when someone asks "where's the documentation?" the answer should be "run `/wiki`" — not "we'll get to it later."
+**Why "nodie-wiki"?** Because the output is a Nodie-owned `.nodie/` knowledge system, not a generic docs folder.
 
 ---
 

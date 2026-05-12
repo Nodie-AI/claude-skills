@@ -8,7 +8,7 @@
 |-------|------|--------|
 | **verify** | `/verify` | 创建验收清单，检查完成状态，产出验证报告 |
 | **pm** | `/pm` | 做优先级决策，写 PRD，推进路线图 |
-| **wiki** | `/wiki` | 从代码生成参考文档，从资料构建知识 wiki |
+| **nodie-wiki** | `/nodie-wiki` | 维护 `.nodie/` 里的仓库文档、依赖 reference 和长期知识 |
 
 ## 为什么是这三个
 
@@ -24,7 +24,7 @@ AI agent 写代码很快。但它不知道什么时候算做完、接下来该�
      └──────────────────┘
          │           │
          ▼           ▼
-       verify        wiki
+       verify     nodie-wiki
      "做完了吗？"   "写下来"
 ```
 
@@ -78,21 +78,21 @@ you> 这个 sprint 状态如何？
 #    → 进度报告 + blocker + 风险标记
 ```
 
-### /wiki 三步走
+### /nodie-wiki 三步走
 
 ```bash
 # 第一步：指向代码或资料
-you> /wiki
+you> /nodie-wiki
 you> 给这个项目生成文档
-#    → 读代码，产出架构文档 + 模块文档
+#    → 更新 .nodie/repo 里的架构文档 + 模块文档
 
 # 第二步：喂资料
 you> 这篇关于认证最佳实践的文章：<URL>
-#    → 抓取、提炼要点、链接到已有 wiki 页面
+#    → 记录到 .nodie/wiki，并把 takeaway 写进 .nodie/MEMORY.md
 
 # 第三步：维护健康
-you> 检查一下 wiki
-#    → 检查断链、孤儿页、过期内容
+you> 检查一下 Nodie wiki
+#    → 检查 .nodie/ 断链、过期页面和重复 truth
 ```
 
 ---
@@ -188,7 +188,7 @@ you> 先做导出还是先做通知？
 
 ---
 
-## /wiki
+## /nodie-wiki
 
 **Read The F\*\*\*ing Docs** — 因为没人会主动写文档，直到出事为止。
 
@@ -202,11 +202,13 @@ you> 先做导出还是先做通知？
 
 ### 原理
 
-运行 `/wiki`，告诉它你要什么。Agent 自己判断该生成代码文档还是编译知识 wiki。
+运行 `/nodie-wiki`，告诉它要记住或整理什么。Agent 会先定位负责的 `.nodie/` 文件，读取已有内容，再执行对应的增删改查。
 
-**代码文档** — 从源代码生成人类可读的参考文档，类似 [cppreference.com](https://en.cppreference.com/) 或 Rust docs。架构概览、模块描述、接口文档、文件结构指南。每个项目都需要但没人写的那种文档。
+**Repo docs** — `.nodie/repo` 记录当前代码仓库的架构、模块边界、数据流、接口和 caveat。
 
-**知识 wiki** — 实现 [Karpathy 的 LLM Wiki 模式](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)。不做 RAG（每次查询都从原始文档重新推导），而是让 LLM 把原始材料——文章、会议纪要、调研、URL——**编译**成持久的、互相链接的 wiki。知识积累而不是蒸发。
+**References** — `.nodie/ref` 记录三方工具、API、服务、协议和库的精确事实。
+
+**Knowledge wiki** — `.nodie/wiki` 用 `<topic>.md` 或 `<topic>/<topic>.md` 加编号 supporting files 保存用户/领域知识。知识积累而不是蒸发。
 
 > *"维护知识库最累的不是阅读和思考——而是记账。更新交叉引用、保持摘要最新、标注新旧数据的矛盾、跨几十个页面维持一致性。人类放弃 wiki 是因为维护负担增长得比价值快。LLM 不会厌倦，不会忘记更新一个交叉引用，一次能改 15 个文件。"*
 > — Andrej Karpathy
@@ -219,7 +221,7 @@ you> 先做导出还是先做通知？
 | **Wiki** | 结构化 markdown：摘要、实体页、交叉引用 | Agent——编译后的知识 |
 | **Schema** | SKILL.md + 约定，告诉 agent 如何维护 wiki | 你和 agent 共同演进 |
 
-**为什么叫 "wiki"？** 因为当有人问"文档在哪"的时候，答案应该是"跑一下 `/wiki`"——而不是"以后再说"。
+**为什么叫 "nodie-wiki"？** 因为输出是一套 Nodie 自己的 `.nodie/` knowledge system，不是通用 docs 目录。
 
 ---
 
