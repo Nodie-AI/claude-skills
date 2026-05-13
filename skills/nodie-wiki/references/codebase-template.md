@@ -36,6 +36,12 @@ Current system reference.
 | <module> | current | [<module>.md](<path>) | `<path>` | <responsibility> |
 | <future module> | TODO | TODO: [<future module>.md](<future-module>.md) | `<path>` | <why it should exist later> |
 
+## Cross-Module Pitfalls \[#cross-module-pitfalls]
+
+| ID | Summary | Modules | Detail |
+| --- | --- | --- | --- |
+| `<PITFALL-ID>` | <one-sentence failure mode> | `<module>`, `<module>` | [pitfalls/<PITFALL-ID>.md](pitfalls/<PITFALL-ID>.md) |
+
 ## References \[#references]
 
 | File | Scope |
@@ -131,4 +137,67 @@ category: repo
 ## Caveats \[#caveats]
 
 - <Known sharp edge, invariant, failure mode, migration note, or operational concern.>
+
+## Regression Contract \[#regression-contract]
+
+| ID | Case | Invariant | Test / Smoke | Detail |
+| --- | --- | --- | --- | --- |
+| `<PITFALL-ID>` | <short scenario> | <what must never regress> | `<test>` / <manual smoke> | [pitfalls/<PITFALL-ID>.md](pitfalls/<PITFALL-ID>.md) |
+
+## Known Pitfalls \[#known-pitfalls]
+
+| ID | One-line Summary | Affected Surface | Status | Detail |
+| --- | --- | --- | --- | --- |
+| `<PITFALL-ID>` | <one sentence describing the pitfall> | `<component/API/runtime>` | active / fixed / watch | [pitfalls/<PITFALL-ID>.md](pitfalls/<PITFALL-ID>.md) |
+```
+
+## Pitfall Page
+
+Create under `.nodie/repo/pitfalls/<PITFALL-ID>.md`.
+
+```markdown
+---
+title: "<PITFALL-ID> — <short title>"
+description: "<one-line failure mode>"
+author: agent
+created: YYYY-MM-DD
+modified: YYYY-MM-DD
+tags: [repo, pitfall, regression]
+category: repo
+status: active
+---
+
+# <PITFALL-ID> — <short title>
+
+## Summary \[#summary]
+
+<One sentence: what failed and why it matters.>
+
+## Owning Module \[#owning-module]
+
+- Module: [<module>](../<module>.md#known-pitfalls)
+- Regression row: [<module> Regression Contract](../<module>.md#regression-contract)
+
+## Symptom \[#symptom]
+
+<What the user/developer saw. Include exact UI/CLI/runtime behavior when known.>
+
+## Root Cause \[#root-cause]
+
+<The underlying implementation/design failure. Avoid vague process blame.>
+
+## Fix Pattern \[#fix-pattern]
+
+<The durable implementation pattern or architecture rule that prevents recurrence.>
+
+## Regression Checks \[#regression-checks]
+
+| Check | Type | Command / Manual Step |
+| --- | --- | --- |
+| <check> | unit / integration / packaged smoke / manual | `<command>` or <step> |
+
+## Source Links \[#source-links]
+
+- [Owning module](../<module>.md#known-pitfalls)
+- [Spec / handoff / issue](<relative-link>#section)
 ```
